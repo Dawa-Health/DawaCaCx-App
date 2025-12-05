@@ -1,23 +1,41 @@
+// Use a remote or public image instead of "figma:asset"
+const logoImage = "https://yourcdn.com/dawa-logo.png";
 
-import React from 'react';
-
-interface LogoProps {
-  className?: string;
-  outlineColor?: string; // Kept for prop compatibility, though not used in img
-  fillColor?: string;    // Kept for prop compatibility
+export function Logo({ className = "w-8 h-8" }: { className?: string }) {
+  return (
+    <img
+      src={logoImage}
+      alt="Dawa Health Logo"
+      className={className}
+      style={{ objectFit: "contain" }}
+      draggable={false}
+    />
+  );
 }
 
-// Data URI for the Dawa Health Logo (Green Rounded Cross)
-const LOGO_SRC = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3QgeD0iNzAiIHk9IjIwIiB3aWR0aD0iNjAiIGhlaWdodD0iMTYwIiByeD0iMTIiIGZpbGw9IiM0NmM3NDEiLz48cmVjdCB4PSIyMCIgeT0iNzAiIHdpZHRoPSIxNjAiIGhlaWdodD0iNjAiIHJ4PSIxMiIgZmlsbD0iIzQ2Yzc0MSIvPjwvc3ZnPg==";
+export function LogoWithText({
+  className = "text-2xl",
+  showTagline = true,
+}: {
+  className?: string;
+  showTagline?: boolean;
+}) {
+  return (
+    <div className={`${className} flex items-center gap-3`}>
+      <Logo className="w-10 h-10" />
 
-export const Logo: React.FC<LogoProps> = ({ 
-  className = "w-32 h-32",
-  outlineColor, 
-  fillColor
-}) => (
-  <img 
-    src={LOGO_SRC} 
-    alt="Dawa Health Logo" 
-    className={`object-contain ${className}`}
-  />
-);
+      <div className="flex flex-col">
+        <div className="flex items-center gap-1">
+          <span className="text-white font-extrabold tracking-tight">DAWA</span>
+          <span className="text-white/90 font-semibold tracking-tight">HEALTH</span>
+        </div>
+
+        {showTagline && (
+          <p className="text-xs text-white/70 leading-tight font-medium">
+            Africa's #1 network
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
