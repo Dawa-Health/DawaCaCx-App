@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dawa CaCx</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#1127ab',
+                50: '#eef1ff',
+                100: '#e0e5ff',
+                200: '#c7d2ff',
+                300: '#9fb3ff',
+                400: '#738eff',
+                500: '#4860ff',
+                600: '#1127ab', // Brand Blue
+                700: '#0e1f8a',
+                800: '#0b186b',
+                900: '#0b1655',
+              },
+              secondary: {
+                DEFAULT: '#46c741',
+                50: '#f0fdf2',
+                100: '#dcfce4',
+                200: '#bbf7ca',
+                300: '#86efac',
+                400: '#4ade80',
+                500: '#46c741', // Brand Green
+                600: '#38a134',
+                700: '#2d8029',
+                800: '#266524',
+                900: '#205320',
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f8fafc;
+      }
+      /* Hide scrollbar for clean UI in lists */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

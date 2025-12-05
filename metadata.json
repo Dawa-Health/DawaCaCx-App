@@ -1,0 +1,7 @@
+{
+  "name": "Dawa CaCx App",
+  "description": "A comprehensive medical application for cervical cancer screening (VIA) management, patient tracking, and AI-assisted analysis.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
