@@ -704,7 +704,7 @@ export default function App() {
                       {isAnalyzing ? (
                         <div className="flex flex-col items-center justify-center py-12 text-primary-700">
                           <Loader2 className="h-10 w-10 animate-spin mb-4 text-primary-500" />
-                          <p className="font-medium animate-pulse">Analyzing tissue patterns...</p>
+                          <p className="font-medium animate-pulse">Running MedSigLIP Analysis...</p>
                           <p className="text-xs text-slate-400 mt-2">Processing visual indicators</p>
                         </div>
                       ) : (

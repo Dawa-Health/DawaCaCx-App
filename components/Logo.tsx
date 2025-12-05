@@ -7,9 +7,8 @@ interface LogoProps {
   fillColor?: string;    // Kept for prop compatibility
 }
 
-// Data URI for the Dawa Health Emblem (Blue Outline, Green Cross)
-// This ensures the logo works reliably without external file dependencies that might be missing.
-const LOGO_SRC = "data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMzcgMTAgTDYzIDEwIEw2MyAzNyBMOTAgMzcgTDkwIDYzIEw2MyA2MyBMNjMgOTAgTDM3IDkwIEwzNyA2MyBMMTAgNjMgTDEwIDM3IEwzNyAzNyBaIiBzdHJva2U9IiMxMTI3YWIiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBmaWxsPSIjZmZmZmZmIi8+PHBhdGggZD0iTTQzIDM1IEw1NyAzNSBMNTcgNDMgTDY1IDQzIEw2NSA1NyBMNTcgNTcgTDU3IDY1IEw0MyA2NSBMNDMgNTcgTDM1IDU3IEwzNSA0MyBMNDMgNDMgWiIgZmlsbD0iIzQ2Yzc0MSIvPjwvc3ZnPg==";
+// Data URI for the Dawa Health Logo (Green Rounded Cross)
+const LOGO_SRC = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3QgeD0iNzAiIHk9IjIwIiB3aWR0aD0iNjAiIGhlaWdodD0iMTYwIiByeD0iMTIiIGZpbGw9IiM0NmM3NDEiLz48cmVjdCB4PSIyMCIgeT0iNzAiIHdpZHRoPSIxNjAiIGhlaWdodD0iNjAiIHJ4PSIxMiIgZmlsbD0iIzQ2Yzc0MSIvPjwvc3ZnPg==";
 
 export const Logo: React.FC<LogoProps> = ({ 
   className = "w-32 h-32",
