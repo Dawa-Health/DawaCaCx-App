@@ -330,13 +330,13 @@ export default function App() {
     <MainLayout activeTab={activeTab} onTabChange={setActiveTab}>
       {activeTab === DashboardTab.HOME && (
         <div className="space-y-6 animate-in fade-in duration-500">
-          <header className="mb-8">
-            <h1 className="text-2xl font-bold text-slate-900">Midwife Console</h1>
-            <p className="text-slate-500">Welcome back, Memory. Here's today's overview.</p>
+          <header className="mb-6 md:mb-8">
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900">Midwife Console</h1>
+            <p className="text-slate-500 text-sm md:text-base">Welcome back, Memory. Here's today's overview.</p>
           </header>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             <StatCard 
               title="Registered Patients" 
               value="5" 
@@ -353,14 +353,14 @@ export default function App() {
             />
             {/* Credits Tile - Matches StatCard Layout but with Custom Colors */}
             <Card className="hover:shadow-md transition-shadow border-slate-100 h-full">
-              <CardContent className="p-8 flex flex-col items-center justify-center text-center h-full gap-6">
-                <div className="mt-4 p-4 rounded-full bg-secondary-50 text-secondary-600 bg-opacity-10 ring-1 ring-black/5">
+              <CardContent className="p-5 pt-8 pb-6 md:p-8 md:pt-10 md:pb-8 flex flex-col items-center justify-center text-center h-full gap-4 md:gap-6">
+                <div className="mt-2 p-4 rounded-full bg-secondary-50 text-secondary-600 bg-opacity-10 ring-1 ring-black/5">
                   <CreditCard className="h-6 w-6" />
                 </div>
                 {/* Horizontal Layout matching StatCard: Value + Title */}
                 <div className="flex items-center gap-3 mt-1 justify-center w-full">
-                    <span className="text-4xl font-bold text-slate-800 tracking-tight">124</span>
-                    <h3 className="text-slate-600 font-medium text-lg leading-tight text-left max-w-[120px]">Available Credits</h3>
+                    <span className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight">124</span>
+                    <h3 className="text-slate-600 font-medium text-base md:text-lg leading-tight text-left max-w-[120px]">Available Credits</h3>
                 </div>
                 
                 <Button
@@ -377,14 +377,14 @@ export default function App() {
             {/* Chart */}
             <Card className="lg:col-span-2 shadow-sm border-slate-200">
               <CardHeader>
-                <CardTitle className="text-slate-800 flex items-center gap-2">
+                <CardTitle className="text-slate-800 flex items-center gap-2 text-lg">
                   <Activity className="h-5 w-5 text-primary-600" />
                   Screening Activity
                 </CardTitle>
-                <p className="text-sm text-slate-500">Overview of screening results (Jun - Nov)</p>
+                <p className="text-xs md:text-sm text-slate-500">Overview of screening results (Jun - Nov)</p>
               </CardHeader>
               <CardContent>
-                <div className="h-[320px] w-full">
+                <div className="h-[280px] md:h-[320px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={screeningData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} stackOffset="sign">
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -407,7 +407,7 @@ export default function App() {
             {/* Recent Patients */}
             <Card className="shadow-sm border-slate-200">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-slate-800">Recent Patients</CardTitle>
+                <CardTitle className="text-slate-800 text-lg">Recent Patients</CardTitle>
                 <Button variant="ghost" size="sm" className="text-primary-600 h-8 text-xs">View All</Button>
               </CardHeader>
               <CardContent className="p-0">
@@ -440,18 +440,18 @@ export default function App() {
 
       {activeTab === DashboardTab.PATIENTS && (
         <div className="space-y-6 animate-in fade-in duration-500">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Patient Registry</h1>
               <p className="text-slate-500 text-sm">Manage and track your patient records.</p>
             </div>
-            <Button className="gap-2">
+            <Button className="gap-2 w-full md:w-auto">
               <Plus size={16} /> New Patient
             </Button>
           </div>
 
           <Card className="border-slate-200 shadow-sm">
-            <div className="p-4 border-b border-slate-100 flex gap-4">
+            <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input 
@@ -459,45 +459,46 @@ export default function App() {
                   className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-slate-900"
                 />
               </div>
-              <Button variant="outline" className="gap-2 text-slate-600">
+              <Button variant="outline" className="gap-2 text-slate-600 w-full md:w-auto">
                 <Filter size={14} /> Filter
               </Button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
+              {/* Added min-w to force horizontal scroll on small devices instead of squashing */}
+              <table className="w-full text-sm text-left min-w-[800px]">
                 <thead className="text-xs text-slate-500 uppercase bg-slate-50/50">
                   <tr>
-                    <th className="px-6 py-3 font-medium">Patient Details</th>
-                    <th className="px-6 py-3 font-medium">Last Screened</th>
-                    <th className="px-6 py-3 font-medium">Status</th>
-                    <th className="px-6 py-3 font-medium">Risk Profile</th>
-                    <th className="px-6 py-3 font-medium text-right">Actions</th>
+                    <th className="px-6 py-3 font-medium whitespace-nowrap">Patient Details</th>
+                    <th className="px-6 py-3 font-medium whitespace-nowrap">Last Screened</th>
+                    <th className="px-6 py-3 font-medium whitespace-nowrap">Status</th>
+                    <th className="px-6 py-3 font-medium whitespace-nowrap">Risk Profile</th>
+                    <th className="px-6 py-3 font-medium text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {patients.map((patient) => (
                     <tr key={patient.id} className="hover:bg-slate-50/80 transition-colors group">
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span className="font-medium text-slate-900">{patient.name}</span>
                           <span className="text-xs text-slate-500">{patient.id} • {patient.age} yrs</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-slate-600">
+                      <td className="px-6 py-4 text-slate-600 whitespace-nowrap">
                         {patient.lastTestDate || "Never"}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <Badge variant={patient.status === 'Suspicious' ? 'danger' : patient.status === 'Pending' ? 'warning' : 'success'}>
                           {patient.status}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                          <div className="flex items-center gap-1.5">
                             <div className={`h-2 w-2 rounded-full ${patient.riskLevel === 'High' ? 'bg-red-500' : 'bg-green-500'}`} />
                             <span className="text-slate-700">{patient.riskLevel} Risk</span>
                          </div>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-right whitespace-nowrap">
                         <Button variant="ghost" size="sm" className="text-slate-400 group-hover:text-primary-600">
                           View <ChevronRight size={14} className="ml-1" />
                         </Button>
@@ -520,30 +521,30 @@ export default function App() {
           
           <Card className="border-slate-200 shadow-sm">
              <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
+              <table className="w-full text-sm text-left min-w-[800px]">
                 <thead className="text-xs text-slate-500 uppercase bg-slate-50/50">
                   <tr>
-                    <th className="px-6 py-3 font-medium">Date</th>
-                    <th className="px-6 py-3 font-medium">Patient</th>
-                    <th className="px-6 py-3 font-medium">Result</th>
-                    <th className="px-6 py-3 font-medium">AI Confidence</th>
-                    <th className="px-6 py-3 font-medium text-right">Report</th>
+                    <th className="px-6 py-3 font-medium whitespace-nowrap">Date</th>
+                    <th className="px-6 py-3 font-medium whitespace-nowrap">Patient</th>
+                    <th className="px-6 py-3 font-medium whitespace-nowrap">Result</th>
+                    <th className="px-6 py-3 font-medium whitespace-nowrap">AI Confidence</th>
+                    <th className="px-6 py-3 font-medium text-right whitespace-nowrap">Report</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                    {[1,2,3,4,5].map((i) => (
                       <tr key={i} className="hover:bg-slate-50 transition-colors">
-                         <td className="px-6 py-4 text-slate-900 font-medium">Nov {20-i}, 2025</td>
-                         <td className="px-6 py-4 text-slate-600">
+                         <td className="px-6 py-4 text-slate-900 font-medium whitespace-nowrap">Nov {20-i}, 2025</td>
+                         <td className="px-6 py-4 text-slate-600 whitespace-nowrap">
                            {patients[i].name} <span className="text-slate-400 text-xs block">{patients[i].id}</span>
                          </td>
-                         <td className="px-6 py-4">
+                         <td className="px-6 py-4 whitespace-nowrap">
                             <Badge variant={i === 2 ? 'danger' : 'success'}>{i === 2 ? 'Suspicious' : 'Normal'}</Badge>
                          </td>
-                         <td className="px-6 py-4 text-slate-600">
+                         <td className="px-6 py-4 text-slate-600 whitespace-nowrap">
                             {i === 2 ? '89%' : '94%'}
                          </td>
-                         <td className="px-6 py-4 text-right">
+                         <td className="px-6 py-4 text-right whitespace-nowrap">
                             <Button variant="ghost" size="sm" className="text-primary-600">
                                <FileText size={14} className="mr-1" /> PDF
                             </Button>
@@ -553,6 +554,55 @@ export default function App() {
                 </tbody>
               </table>
              </div>
+          </Card>
+        </div>
+      )}
+
+      {activeTab === DashboardTab.PROFILE && (
+        <div className="space-y-6 animate-in fade-in duration-500">
+           <header className="mb-6 md:mb-8">
+            <h1 className="text-2xl font-bold text-slate-900">My Profile</h1>
+            <p className="text-slate-500">Manage your account settings and preferences.</p>
+          </header>
+
+          <Card className="max-w-2xl border-slate-200 shadow-sm">
+             <CardHeader className="border-b border-slate-100 pb-6">
+               <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 md:h-20 md:w-20 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 text-xl md:text-2xl font-bold ring-4 ring-white shadow-sm">
+                    MM
+                  </div>
+                  <div>
+                    <h2 className="text-lg md:text-xl font-bold text-slate-900">Memory Musonda</h2>
+                    <p className="text-sm md:text-base text-slate-500">Certified Midwife • Dawa Clinic</p>
+                    <Badge className="mt-2 bg-primary-50 text-primary-700 border-primary-100">Verified Account</Badge>
+                  </div>
+               </div>
+             </CardHeader>
+             <CardContent className="space-y-6 pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <Input label="Full Name" value="Memory Musonda" readOnly className="bg-slate-50" />
+                   <Input label="License Number" value="MW-1234-5678" readOnly className="bg-slate-50" icon={<Briefcase size={14}/>} />
+                   <Input label="Email Address" value="memory.musonda@dawahealth.zm" readOnly className="bg-slate-50" icon={<Mail size={14}/>} />
+                   <Input label="Phone Number" value="+260 97 123 4567" readOnly className="bg-slate-50" icon={<Phone size={14}/>} />
+                   <Input label="Clinic / Facility" value="Dawa Clinic, Lusaka" readOnly className="bg-slate-50" icon={<Building size={14}/>} />
+                   <Input label="Role" value="Senior Midwife" readOnly className="bg-slate-50" />
+                </div>
+                
+                <div className="pt-4 border-t border-slate-100">
+                   <h3 className="font-semibold text-slate-900 mb-4">Account Settings</h3>
+                   <div className="space-y-3">
+                      <Button variant="outline" className="w-full justify-start text-slate-600">
+                         Change Password
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-slate-600">
+                         Notification Preferences
+                      </Button>
+                      <Button variant="ghost" className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700">
+                         Sign Out
+                      </Button>
+                   </div>
+                </div>
+             </CardContent>
           </Card>
         </div>
       )}
@@ -582,16 +632,16 @@ export default function App() {
   );
 }
 
-// Updated StatCard with Professional Centered Look
+// Updated StatCard with Professional Centered Look and Mobile Responsiveness
 const StatCard = ({ title, value, icon, colorClass, trend }: any) => (
   <Card className="hover:shadow-md transition-shadow border-slate-100 h-full">
-    <CardContent className="p-6 flex flex-col items-center justify-center text-center h-full gap-4">
+    <CardContent className="p-4 md:p-6 flex flex-col items-center justify-center text-center h-full gap-4">
          <div className={`p-4 rounded-full ${colorClass.replace('text-', 'bg-').replace('600', '50').replace('500', '50')} ${colorClass} bg-opacity-10 ring-1 ring-black/5`}>
            {icon}
          </div>
          <div className="flex items-center gap-3 mt-1">
-            <span className="text-4xl font-bold text-slate-800 tracking-tight">{value}</span>
-            <h3 className="text-slate-600 font-medium text-lg leading-tight text-left max-w-[120px]">{title}</h3>
+            <span className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight">{value}</span>
+            <h3 className="text-slate-600 font-medium text-base md:text-lg leading-tight text-left max-w-[120px]">{title}</h3>
          </div>
          {trend && (
            <div className="mt-1">
