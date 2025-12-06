@@ -20,7 +20,7 @@ export const MainLayout: React.FC<LayoutProps> = ({ children, activeTab, onTabCh
           <span className="font-bold text-lg text-primary-900 tracking-tight">Dawa CaCx</span>
         </div>
         <div className="h-8 w-8 rounded-full bg-primary-50 border border-primary-200 flex items-center justify-center text-primary-700 font-bold text-xs">
-          MW
+          MM
         </div>
       </div>
 
@@ -64,10 +64,10 @@ export const MainLayout: React.FC<LayoutProps> = ({ children, activeTab, onTabCh
         <div className="p-4 border-t border-slate-100">
           <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer border border-transparent hover:border-slate-100">
             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-white">
-              SJ
+              MM
             </div>
             <div className="flex flex-col overflow-hidden">
-              <span className="text-sm font-semibold text-slate-900 truncate">Sarah Johnson</span>
+              <span className="text-sm font-semibold text-slate-900 truncate">Memory Musonda</span>
               <span className="text-xs text-slate-500 truncate">Dawa Clinic</span>
             </div>
             <LogOut size={16} className="ml-auto text-slate-400 hover:text-red-500 transition-colors" />

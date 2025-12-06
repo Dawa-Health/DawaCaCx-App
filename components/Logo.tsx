@@ -1,7 +1,13 @@
 // Use a remote or public image instead of "figma:asset"
 const logoImage = "https://yourcdn.com/dawa-logo.png";
 
-export function Logo({ className = "w-8 h-8" }: { className?: string }) {
+interface LogoProps {
+  className?: string;
+  outlineColor?: string;
+  fillColor?: string;
+}
+
+export function Logo({ className = "w-8 h-8", outlineColor, fillColor }: LogoProps) {
   return (
     <img
       src={logoImage}
