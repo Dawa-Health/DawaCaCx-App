@@ -13,6 +13,19 @@ try {
   console.error("Failed to initialize GoogleGenAI", e);
 }
 
+// Helper to convert base64 to blob safely, avoiding fetch errors on data URIs
+const base64ToBlob = (base64: string): Blob => {
+  const arr = base64.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while(n--){
+      u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], {type:mime});
+};
+
 export const analyzeVIAImage = async (base64Image: string): Promise<AnalysisResult> => {
   // Configuration for MedSigLIP
   const MODEL_ID = "KhanyiTapiwa00/medsiglip-diagnosis";
@@ -34,8 +47,7 @@ export const analyzeVIAImage = async (base64Image: string): Promise<AnalysisResu
 
   try {
     // 1. Convert Data URI to Blob for binary upload
-    const res = await fetch(base64Image);
-    const blob = await res.blob();
+    const blob = base64ToBlob(base64Image);
 
     // 2. Query Hugging Face Inference API
     const response = await fetch(API_URL, {
