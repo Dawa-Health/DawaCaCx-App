@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AppState, DashboardTab, Patient, VIATestRecord } from './types';
 import { MainLayout } from './components/Layout';
 import { Button, Input, Card, CardContent, CardHeader, CardTitle, Badge, Dialog } from './components/UIComponents';
@@ -8,7 +8,7 @@ import {
   ChevronRight, Camera, CheckCircle2, AlertCircle, ShoppingCart, 
   CreditCard, ArrowRight, ShieldCheck, Mail, Lock, Phone,
   Stethoscope, HeartPulse, ScanLine, History, ArrowLeft, FileText, Globe, UserPlus, Briefcase, Building, UserCircle,
-  ArrowUpRight, Clock, MoreVertical, RefreshCw, Play, Microscope
+  ArrowUpRight, Clock, MoreVertical, RefreshCw, Play, Microscope, GraduationCap, Upload, Image as ImageIcon, X
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from 'recharts';
 import { analyzeVIAImage } from './services/geminiService';
@@ -242,7 +242,7 @@ const GetStarted = ({ onStart, onShowTerms }: { onStart: () => void, onShowTerms
     <div className="h-screen bg-[#1127ab] flex flex-col overflow-hidden animate-in fade-in duration-500 relative">
        {/* Background pattern */}
        <div className="absolute inset-0 z-0 opacity-10" style={{ 
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` 
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` 
       }}></div>
 
       <div className="flex-1 flex flex-col items-center justify-center p-8 relative z-10">
@@ -287,6 +287,12 @@ export default function App() {
   const [appState, setAppState] = useState<AppState>(AppState.SPLASH);
   const [activeTab, setActiveTab] = useState<DashboardTab>(DashboardTab.HOME);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  
+  // Camera/Image Capture State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [analysisMode, setAnalysisMode] = useState<'clinical' | 'training' | null>(null);
 
   // Generate 20 patients with DM-XXXX IDs
   const [patients] = useState<Patient[]>(Array.from({ length: 20 }).map((_, i) => ({
@@ -310,6 +316,45 @@ export default function App() {
   const handleVerifyOTP = () => setAppState(AppState.GET_STARTED);
   const handleStartApp = () => setAppState(AppState.DASHBOARD);
   
+  const triggerFileInput = (mode: 'clinical' | 'training') => {
+    setAnalysisMode(mode);
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setSelectedImage(e.target?.result as string);
+        setShowImagePreview(true);
+      };
+      reader.readAsDataURL(file);
+    }
+    // Reset input so same file can be selected again
+    if (event.target) event.target.value = '';
+  };
+
+  const handleAnalyzeConfirm = () => {
+    // Navigate to relevant flow or simulate analysis
+    setShowImagePreview(false);
+    // In a real app, this would route to an analysis screen or loading state
+    alert(`Starting AI analysis in ${analysisMode} mode...`);
+  };
+
+  const handleRetake = () => {
+    setShowImagePreview(false);
+    setSelectedImage(null);
+    if (fileInputRef.current && analysisMode) {
+      // Small timeout to allow modal to close before reopening file picker
+      setTimeout(() => {
+        triggerFileInput(analysisMode);
+      }, 300);
+    }
+  };
+
   // Chart Data: June to November - Breakdown of Normal, <CIN2, CIN2+
   const screeningData = [
     { name: 'Jun', normal: 42, lowGrade: 5, highGrade: 2 },
@@ -329,11 +374,66 @@ export default function App() {
   return (
     <MainLayout activeTab={activeTab} onTabChange={setActiveTab}>
       {activeTab === DashboardTab.HOME && (
-        <div className="space-y-6 animate-in fade-in duration-500">
-          <header className="mb-6 md:mb-8">
+        <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500">
+          <header className="mb-4 md:mb-6">
             <h1 className="text-xl md:text-2xl font-bold text-slate-900">Midwife Console</h1>
             <p className="text-slate-500 text-sm md:text-base">Welcome back, Memory. Here's today's overview.</p>
           </header>
+
+          {/* Hidden File Input for Camera/Gallery */}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+          />
+
+          {/* Action Cards: Capture & Training */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* Card 1: Clinical / VIA Test */}
+            <Card 
+              className="bg-primary-600 text-white border-none shadow-lg relative overflow-hidden group cursor-pointer hover:shadow-xl transition-all"
+              onClick={() => triggerFileInput('clinical')}
+            >
+              <div className="absolute top-0 right-0 p-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+              <CardContent className="p-6 md:p-8 flex items-center justify-between relative z-10">
+                <div className="space-y-3">
+                  <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <Camera className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold tracking-tight">Start VIA Screening</h3>
+                    <p className="text-primary-100 text-sm mt-1 max-w-[200px]">Capture patient cervix image for instant AI analysis.</p>
+                  </div>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-white text-primary-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <ArrowRight size={20} />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Card 2: Training / Upskilling */}
+            <Card 
+              className="bg-white border border-secondary-200 shadow-md cursor-pointer group hover:border-secondary-500 transition-all hover:shadow-lg"
+              onClick={() => triggerFileInput('training')}
+            >
+              <CardContent className="p-6 md:p-8 flex items-center justify-between h-full">
+                <div className="space-y-3">
+                  <div className="h-12 w-12 rounded-xl bg-secondary-50 flex items-center justify-center">
+                    <GraduationCap className="h-6 w-6 text-secondary-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Training & Upskilling</h3>
+                    <p className="text-slate-500 text-sm mt-1 max-w-[200px]">Upload practice images to get AI feedback and learn.</p>
+                  </div>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-secondary-50 text-secondary-600 flex items-center justify-center group-hover:bg-secondary-500 group-hover:text-white transition-colors">
+                  <Upload size={20} />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
@@ -353,12 +453,12 @@ export default function App() {
             />
             {/* Credits Tile - Matches StatCard Layout but with Custom Colors */}
             <Card className="hover:shadow-md transition-shadow border-slate-100 h-full">
-              <CardContent className="p-5 pt-8 pb-6 md:p-8 md:pt-10 md:pb-8 flex flex-col items-center justify-center text-center h-full gap-4 md:gap-6">
+              <CardContent className="p-5 md:p-6 flex flex-col items-center justify-center text-center h-full gap-4 md:gap-6 pt-10 pb-8">
                 <div className="mt-2 p-4 rounded-full bg-secondary-50 text-secondary-600 bg-opacity-10 ring-1 ring-black/5">
                   <CreditCard className="h-6 w-6" />
                 </div>
                 {/* Horizontal Layout matching StatCard: Value + Title */}
-                <div className="flex items-center gap-3 mt-1 justify-center w-full">
+                <div className="flex items-center gap-3 justify-center w-full">
                     <span className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight">124</span>
                     <h3 className="text-slate-600 font-medium text-base md:text-lg leading-tight text-left max-w-[120px]">Available Credits</h3>
                 </div>
@@ -384,7 +484,7 @@ export default function App() {
                 <p className="text-xs md:text-sm text-slate-500">Overview of screening results (Jun - Nov)</p>
               </CardHeader>
               <CardContent>
-                <div className="h-[280px] md:h-[320px] w-full">
+                <div className="h-[250px] md:h-[320px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={screeningData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} stackOffset="sign">
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -437,6 +537,36 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Image Confirmation Modal */}
+      <Dialog isOpen={showImagePreview} onClose={() => setShowImagePreview(false)} title={analysisMode === 'clinical' ? "Confirm Patient Image" : "Confirm Training Image"}>
+        <div className="space-y-6">
+          <div className="relative rounded-xl overflow-hidden bg-slate-900 aspect-[4/3] flex items-center justify-center">
+             {selectedImage ? (
+                <img src={selectedImage} alt="Captured" className="w-full h-full object-contain" />
+             ) : (
+                <div className="text-white text-sm">No image selected</div>
+             )}
+          </div>
+          
+          <div className="flex flex-col gap-2">
+             <p className="text-sm text-slate-500 text-center">
+                {analysisMode === 'clinical' 
+                   ? "Ensure the cervix is clearly visible and in focus before proceeding with clinical analysis."
+                   : "Use this image to practice and receive feedback on your VIA assessment skills."}
+             </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+             <Button variant="outline" onClick={handleRetake} className="border-slate-300 text-slate-700">
+                <RefreshCw size={16} className="mr-2" /> Retake
+             </Button>
+             <Button onClick={handleAnalyzeConfirm} className={analysisMode === 'clinical' ? 'bg-primary-600' : 'bg-secondary-500 text-white hover:bg-secondary-600'}>
+                {analysisMode === 'clinical' ? 'Start Analysis' : 'Get Feedback'} <ArrowRight size={16} className="ml-2" />
+             </Button>
+          </div>
+        </div>
+      </Dialog>
 
       {activeTab === DashboardTab.PATIENTS && (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -635,7 +765,7 @@ export default function App() {
 // Updated StatCard with Professional Centered Look and Mobile Responsiveness
 const StatCard = ({ title, value, icon, colorClass, trend }: any) => (
   <Card className="hover:shadow-md transition-shadow border-slate-100 h-full">
-    <CardContent className="p-4 md:p-6 flex flex-col items-center justify-center text-center h-full gap-4">
+    <CardContent className="p-5 md:p-6 flex flex-col items-center justify-center text-center h-full gap-4 md:gap-6">
          <div className={`p-4 rounded-full ${colorClass.replace('text-', 'bg-').replace('600', '50').replace('500', '50')} ${colorClass} bg-opacity-10 ring-1 ring-black/5`}>
            {icon}
          </div>
