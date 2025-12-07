@@ -1,4 +1,6 @@
+
 import { GoogleGenAI } from "@google/genai";
+import { AnalysisResult } from "../types";
 
 let genAI: GoogleGenAI | null = null;
 
@@ -11,16 +13,23 @@ try {
   console.error("Failed to initialize GoogleGenAI", e);
 }
 
-export const analyzeVIAImage = async (base64Image: string): Promise<string> => {
+export const analyzeVIAImage = async (base64Image: string): Promise<AnalysisResult> => {
   // Configuration for MedSigLIP
   const MODEL_ID = "KhanyiTapiwa00/medsiglip-diagnosis";
   const API_URL = `https://api-inference.huggingface.co/models/${MODEL_ID}`;
   
-  // Use HF_TOKEN if available, otherwise try API_KEY (user might have set the HF key there for this task)
+  // Use HF_TOKEN if available, otherwise try API_KEY (fallback)
   const apiKey = process.env.HF_TOKEN || process.env.VITE_HF_TOKEN || process.env.API_KEY;
 
   if (!apiKey) {
-    return "Service Error: API Key missing. Please set HF_TOKEN or API_KEY.";
+    return {
+        imageUrl: base64Image,
+        label: "Configuration Error",
+        confidence: 0,
+        suspicionLevel: 'Low',
+        recommendation: "API Key missing. Please set HF_TOKEN or API_KEY in environment variables.",
+        error: "Missing API Key"
+    };
   }
 
   try {
@@ -41,7 +50,14 @@ export const analyzeVIAImage = async (base64Image: string): Promise<string> => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("HF API Error:", response.status, errorText);
-      return `Analysis Failed: Server returned ${response.status}. Ensure the model is loaded and you have permission.`;
+      return {
+          imageUrl: base64Image,
+          label: "Service Error",
+          confidence: 0,
+          suspicionLevel: 'Low',
+          recommendation: `Analysis Failed: Server returned ${response.status}. Please try again later.`,
+          error: `HTTP ${response.status}`
+      };
     }
 
     const result = await response.json();
@@ -52,44 +68,56 @@ export const analyzeVIAImage = async (base64Image: string): Promise<string> => {
       // Find the top prediction
       const sorted = result.sort((a: any, b: any) => b.score - a.score);
       const top = sorted[0];
-      const confidence = (top.score * 100).toFixed(1);
+      const confidence = parseFloat((top.score * 100).toFixed(1));
       const label = top.label.trim();
 
       // Map labels to Clinical Report Format
       // We interpret common labels like "Positive", "Negative", "Normal", "Lesion"
-      let suspicion = "Low";
+      let suspicion: 'Low' | 'Medium' | 'High' = "Low";
       let recommendation = "Routine screening as per standard schedule.";
       
       const l = label.toLowerCase();
       
-      if (l.includes("positive") || l.includes("cancer") || l.includes("high grade") || l.includes("cin") || l.includes("hsil") || l.includes("abnormal")) {
+      if (l.includes("positive") || l.includes("cancer") || l.includes("high grade") || l.includes("cin2") || l.includes("cin3") || l.includes("hsil") || l.includes("abnormal")) {
         suspicion = "High";
-        recommendation = "Refer for colposcopy and biopsy immediately.";
-      } else if (l.includes("suspicious") || l.includes("low grade") || l.includes("lsil")) {
+        recommendation = "Refer for colposcopy and biopsy immediately. Consider 'See and Treat' if eligible.";
+      } else if (l.includes("suspicious") || l.includes("low grade") || l.includes("cin1") || l.includes("lsil")) {
         suspicion = "Medium";
-        recommendation = "Repeat VIA in 2-4 weeks or refer for triage.";
+        recommendation = "Repeat VIA in 6-12 months or refer for triage testing (HPV DNA).";
       } else if (l.includes("negative") || l.includes("normal") || l.includes("benign")) {
         suspicion = "Low";
-        recommendation = "Routine screening interval (e.g., 3-5 years).";
+        recommendation = "Routine screening interval (e.g., 3-5 years) recommended.";
       }
 
-      return `**Observation**: MedSigLIP classification identifies '${label}' with ${confidence}% confidence.
-**Suspicion Level**: ${suspicion}
-**Recommendation**: ${recommendation}
-
-Disclaimer: Automated analysis using ${MODEL_ID}. Verify clinically.`;
+      return {
+          imageUrl: base64Image,
+          label: label,
+          confidence: confidence,
+          suspicionLevel: suspicion,
+          recommendation: recommendation,
+          rawOutput: result
+      };
     } 
     
-    // Fallback if result format is unexpected (e.g., text generation)
-    if (Array.isArray(result) && result[0].generated_text) {
-        return `**MedSigLIP Output**: ${result[0].generated_text}`;
-    }
-
-    return "Analysis Result: Model returned unrecognized data format.";
+    return {
+        imageUrl: base64Image,
+        label: "Unknown Format",
+        confidence: 0,
+        suspicionLevel: 'Low',
+        recommendation: "Model returned unrecognized data format. Please verify manually.",
+        rawOutput: result
+    };
 
   } catch (error) {
     console.error("Gemini/HF Analysis Error:", error);
-    return "Error analyzing image. Please try again or consult a specialist manually.";
+    return {
+        imageUrl: base64Image,
+        label: "Network Error",
+        confidence: 0,
+        suspicionLevel: 'Low',
+        recommendation: "Error analyzing image. Please check your internet connection.",
+        error: String(error)
+    };
   }
 };
 

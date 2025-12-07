@@ -6,6 +6,7 @@ export enum AppState {
   OTP = 'OTP',
   GET_STARTED = 'GET_STARTED',
   DASHBOARD = 'DASHBOARD',
+  RESULTS = 'RESULTS',
   VIA_TEST = 'VIA_TEST',
   PURCHASE = 'PURCHASE',
   TERMS = 'TERMS'
@@ -26,6 +27,16 @@ export interface Patient {
   lastTestDate?: string;
   status: 'Normal' | 'Suspicious' | 'Pending' | 'Untested';
   riskLevel: 'Low' | 'Medium' | 'High';
+}
+
+export interface AnalysisResult {
+  imageUrl: string;
+  label: string;
+  confidence: number;
+  suspicionLevel: 'Low' | 'Medium' | 'High';
+  recommendation: string;
+  rawOutput?: any;
+  error?: string;
 }
 
 export interface VIATestRecord {
