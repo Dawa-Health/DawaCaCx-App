@@ -8,9 +8,10 @@ interface LayoutProps {
   children: React.ReactNode;
   activeTab: DashboardTab;
   onTabChange: (tab: DashboardTab) => void;
+  onLogout: () => void;
 }
 
-export const MainLayout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => {
+export const MainLayout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, onLogout }) => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans text-slate-900">
       {/* Mobile Header */}
@@ -70,7 +71,9 @@ export const MainLayout: React.FC<LayoutProps> = ({ children, activeTab, onTabCh
               <span className="text-sm font-semibold text-slate-900 truncate">Memory Musonda</span>
               <span className="text-xs text-slate-500 truncate">Dawa Clinic</span>
             </div>
-            <LogOut size={16} className="ml-auto text-slate-400 hover:text-red-500 transition-colors" />
+            <button onClick={onLogout} className="ml-auto p-1 rounded-full hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors" title="Sign Out">
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
       </aside>

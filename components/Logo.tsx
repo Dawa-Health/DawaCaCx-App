@@ -1,47 +1,43 @@
-// Use a remote or public image instead of "figma:asset"
-const logoImage = "https://yourcdn.com/dawa-logo.png";
-
 interface LogoProps {
   className?: string;
   outlineColor?: string;
-  fillColor?: string;
+  fillColor?: string; // color for inner cross
 }
 
-export function Logo({ className = "w-8 h-8", outlineColor, fillColor }: LogoProps) {
+export function Logo({
+  className,
+  outlineColor = "#FFFFFF", // white outline
+  fillColor = "#3CCB4A",     // green cross
+}: LogoProps) {
   return (
-    <img
-      src={logoImage}
-      alt="Dawa Health Logo"
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1250 1250"
       className={className}
-      style={{ objectFit: "contain" }}
-      draggable={false}
-    />
-  );
-}
+    >
+      {/* INNER GREEN CROSS */}
+      <path
+        d="
+        M 547,346 L 530,361 L 505,511 L 350,538 L 346,704 
+        L 363,720 L 517,742 L 671,892 L 742,740 L 900,743 L 900,710
+        L 903,547 L 887,530 L 738,505 L 707,348 Z
+        "
+        fill={fillColor}
+      />
 
-export function LogoWithText({
-  className = "text-2xl",
-  showTagline = true,
-}: {
-  className?: string;
-  showTagline?: boolean;
-}) {
-  return (
-    <div className={`${className} flex items-center gap-3`}>
-      <Logo className="w-10 h-10" />
-
-      <div className="flex flex-col">
-        <div className="flex items-center gap-1">
-          <span className="text-white font-extrabold tracking-tight">DAWA</span>
-          <span className="text-white/90 font-semibold tracking-tight">HEALTH</span>
-        </div>
-
-        {showTagline && (
-          <p className="text-xs text-white/70 leading-tight font-medium">
-            Africa's #1 network
-          </p>
-        )}
-      </div>
-    </div>
+      {/* OUTER WHITE OUTLINE */}
+      <path
+        d="
+        M 412,1 L 356,353 L 1,412 L 1,838 L 351,892 
+        L 413,1249 L 836,1249 L 891,899 L 1248,837 
+        L 1248,412 L 892,352 L 839,2 Z
+        "
+        fill="none"
+        stroke={outlineColor}
+        strokeWidth="60"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

@@ -9,7 +9,7 @@ import {
   ChevronRight, Camera, CheckCircle2, AlertCircle, ShoppingCart, 
   CreditCard, ArrowRight, ShieldCheck, Mail, Lock, Phone,
   Stethoscope, HeartPulse, ScanLine, History, ArrowLeft, FileText, Globe, UserPlus, Briefcase, Building, UserCircle,
-  ArrowUpRight, Clock, MoreVertical, RefreshCw, Play, Microscope, GraduationCap, Upload, Image as ImageIcon, X, BookOpen, AlertTriangle, Save, Share2
+  ArrowUpRight, Clock, MoreVertical, RefreshCw, Play, Microscope, GraduationCap, Upload, Image as ImageIcon, X, BookOpen, AlertTriangle, Save, Share2, Smartphone, Loader2, LogOut
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from 'recharts';
 import { analyzeVIAImage } from './services/geminiService';
@@ -283,7 +283,7 @@ const GetStarted = ({ onStart, onShowTerms }: { onStart: () => void, onShowTerms
 };
 
 // --- Results Page Component ---
-const ResultsPage = ({ result, onBack, onSave }: { result: AnalysisResult, onBack: () => void, onSave: () => void }) => {
+const ResultsPage = ({ result, patient, onBack, onSave }: { result: AnalysisResult, patient?: Patient, onBack: () => void, onSave: () => void }) => {
   if (!result) return null;
 
   return (
@@ -293,10 +293,19 @@ const ResultsPage = ({ result, onBack, onSave }: { result: AnalysisResult, onBac
              <Button variant="ghost" size="sm" onClick={onBack} className="p-0 hover:bg-transparent">
                <ArrowLeft className="h-6 w-6 text-slate-600" />
              </Button>
-             <span className="font-bold text-lg text-slate-900">Analysis Results</span>
+             <div className="flex flex-col">
+                <span className="font-bold text-lg text-slate-900">Analysis Results</span>
+                {patient && <span className="text-xs text-slate-500">{patient.name} ({patient.id})</span>}
+             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="hidden md:flex gap-2">
+            <Button variant="outline" size="sm" className="hidden md:flex gap-2" onClick={() => {
+                if (navigator.share) {
+                    navigator.share({ title: 'Dawa CaCx Report', text: `Screening Result for ${patient?.name || 'Patient'}: ${result.label}`, url: window.location.href });
+                } else {
+                    alert("Report link copied to clipboard");
+                }
+            }}>
               <Share2 size={16} /> Share
             </Button>
             <Button size="sm" onClick={onSave} className="bg-primary-600 text-white gap-2">
@@ -333,32 +342,32 @@ const ResultsPage = ({ result, onBack, onSave }: { result: AnalysisResult, onBac
 
             {/* Right Col: Clinical Details */}
             <div className="space-y-6">
-               {/* Classification Badge */}
+               {/* Classification Badge - REFINED LAYOUT */}
                <Card className={`border-l-4 ${
                   result.suspicionLevel === 'High' ? 'border-l-red-500 bg-red-50/50' : 
                   result.suspicionLevel === 'Medium' ? 'border-l-amber-500 bg-amber-50/50' : 
                   'border-l-green-500 bg-green-50/50'
                }`}>
-                  <CardContent className="p-6">
-                     <div className="flex items-start gap-4">
-                        <div className={`p-3 rounded-full ${
+                  <CardContent className="p-8">
+                     <div className="flex items-start gap-6">
+                        <div className={`p-3 rounded-full shrink-0 ${
                            result.suspicionLevel === 'High' ? 'bg-red-100 text-red-600' : 
                            result.suspicionLevel === 'Medium' ? 'bg-amber-100 text-amber-600' : 
                            'bg-green-100 text-green-600'
                         }`}>
-                           <Activity className="h-6 w-6" />
+                           <Activity className="h-8 w-8" />
                         </div>
-                        <div className="flex-1 text-left">
-                           <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-1">Staging Classification</h4>
-                           <h2 className={`text-2xl md:text-3xl font-bold ${
+                        <div className="flex-1 flex flex-col justify-center">
+                           <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-2">Staging Classification</h4>
+                           <h2 className={`text-2xl md:text-3xl font-extrabold mb-2 ${
                               result.suspicionLevel === 'High' ? 'text-red-700' : 
                               result.suspicionLevel === 'Medium' ? 'text-amber-700' : 
                               'text-green-700'
                            }`}>
                               {result.label || "Unclassified"}
                            </h2>
-                           <p className="text-slate-600 mt-2 text-sm">
-                              Based on visual pattern analysis consistent with {result.suspicionLevel} risk markers.
+                           <p className="text-slate-700 text-base leading-relaxed mt-4">
+                              Based on visual pattern analysis consistent with <span className="font-semibold">{result.suspicionLevel} risk markers</span>.
                            </p>
                         </div>
                      </div>
@@ -411,7 +420,12 @@ const ResultsPage = ({ result, onBack, onSave }: { result: AnalysisResult, onBac
 export default function App() {
   const [appState, setAppState] = useState<AppState>(AppState.SPLASH);
   const [activeTab, setActiveTab] = useState<DashboardTab>(DashboardTab.HOME);
+  
+  // Payment State
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [paymentStep, setPaymentStep] = useState<'package' | 'method' | 'processing' | 'success'>('package');
+  const [selectedPackage, setSelectedPackage] = useState<{credits: number, price: number} | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'mobile' | 'card' | null>(null);
   
   // Camera/Image Capture State
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -422,9 +436,14 @@ export default function App() {
   // Analysis State
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [selectedPatientId, setSelectedPatientId] = useState<string>(''); // For clinical flow
+  
+  // New Patient State
+  const [showNewPatientModal, setShowNewPatientModal] = useState(false);
+  const [newPatientForm, setNewPatientForm] = useState({ name: '', age: '', phone: '' });
 
   // Generate 20 patients with DM-XXXX IDs
-  const [patients] = useState<Patient[]>(Array.from({ length: 20 }).map((_, i) => ({
+  const [patients, setPatients] = useState<Patient[]>(Array.from({ length: 20 }).map((_, i) => ({
     id: `DM-${1000 + i}`,
     name: [
       "Alice Mumba", "Beatrice Zulu", "Chipo Banda", "Dorothy Lungu", "Esther Phiri",
@@ -439,14 +458,32 @@ export default function App() {
     lastTestDate: `2025-11-${String(Math.max(1, 30 - i)).padStart(2, '0')}` // November dates
   })));
 
+  // History State
+  const [historyRecords, setHistoryRecords] = useState<any[]>([
+      { date: 'Nov 19, 2025', patientIndex: 1, result: 'Normal', confidence: '94%' },
+      { date: 'Nov 18, 2025', patientIndex: 2, result: 'Suspicious', confidence: '89%' },
+      { date: 'Nov 17, 2025', patientIndex: 3, result: 'Normal', confidence: '92%' },
+      { date: 'Nov 16, 2025', patientIndex: 4, result: 'Normal', confidence: '96%' },
+      { date: 'Nov 15, 2025', patientIndex: 0, result: 'Normal', confidence: '91%' },
+  ]);
+
   const handleFinishSplash = () => setAppState(AppState.LOGIN);
   const handleLogin = () => setAppState(AppState.OTP);
-  const handleSignup = () => setAppState(AppState.OTP); // Simplified flow
+  const handleSignup = () => setAppState(AppState.OTP); 
   const handleVerifyOTP = () => setAppState(AppState.GET_STARTED);
   const handleStartApp = () => setAppState(AppState.DASHBOARD);
   
+  const handleLogout = () => {
+    setAppState(AppState.LOGIN);
+    setActiveTab(DashboardTab.HOME);
+    setAnalysisResult(null);
+    setSelectedImage(null);
+    setSelectedPatientId('');
+  };
+
   const triggerFileInput = (mode: 'clinical' | 'training') => {
     setAnalysisMode(mode);
+    setSelectedPatientId(''); // Reset selected patient for new flow
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
@@ -466,17 +503,32 @@ export default function App() {
     if (event.target) event.target.value = '';
   };
 
+  const handleAddNewPatient = () => {
+      // Add new patient to state
+      const newId = `DM-${1000 + patients.length}`;
+      const newPatient: Patient = {
+          id: newId,
+          name: newPatientForm.name,
+          age: parseInt(newPatientForm.age) || 25,
+          contact: newPatientForm.phone,
+          status: 'Untested',
+          riskLevel: 'Low'
+      };
+      
+      setPatients(prev => [newPatient, ...prev]);
+      setSelectedPatientId(newId); // Auto select the new patient
+      setShowNewPatientModal(false);
+      setNewPatientForm({ name: '', age: '', phone: '' });
+  };
+
   const handleAnalyzeConfirm = async () => {
     if (!selectedImage) return;
 
     setIsAnalyzing(true);
     
     try {
-        // Call the Gemini Service (now connected to Hugging Face)
         const result = await analyzeVIAImage(selectedImage);
         
-        // Mock fallback if API key is missing or ANY error occurs (network, CORS, etc) so flow is not interrupted
-        // This ensures the demo works even without a live backend connection
         if (result.error) {
             console.warn("Using mock result for demo because analysis failed:", result.error);
             const mockResult: AnalysisResult = {
@@ -495,7 +547,6 @@ export default function App() {
         setAppState(AppState.RESULTS);
     } catch (error) {
         console.error("Analysis failed", error);
-        // Fallback to mock result in case of unhandled exceptions to ensure user flow continues
         const mockResult: AnalysisResult = {
              imageUrl: selectedImage,
              label: "High Grade Lesion (CIN2+)",
@@ -515,7 +566,6 @@ export default function App() {
     setShowImagePreview(false);
     setSelectedImage(null);
     if (fileInputRef.current && analysisMode) {
-      // Small timeout to allow modal to close before reopening file picker
       setTimeout(() => {
         triggerFileInput(analysisMode);
       }, 300);
@@ -526,6 +576,75 @@ export default function App() {
       setAppState(AppState.DASHBOARD);
       setAnalysisResult(null);
       setSelectedImage(null);
+      setSelectedPatientId('');
+  };
+
+  const handleSaveResult = () => {
+      if (!analysisResult) return;
+      
+      // 1. Update Patient Status
+      if (analysisMode === 'clinical' && selectedPatientId) {
+         setPatients(prev => prev.map(p => {
+             if (p.id === selectedPatientId) {
+                 return {
+                     ...p,
+                     status: analysisResult.suspicionLevel === 'Low' ? 'Normal' : 'Suspicious',
+                     riskLevel: analysisResult.suspicionLevel === 'High' ? 'High' : analysisResult.suspicionLevel === 'Medium' ? 'Medium' : 'Low',
+                     lastTestDate: new Date().toISOString().split('T')[0]
+                 };
+             }
+             return p;
+         }));
+
+         // 2. Add to History
+         const patient = patients.find(p => p.id === selectedPatientId);
+         const newRecord = {
+             date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+             patientIndex: -1, // Not used for dynamic
+             patientName: patient?.name || 'Unknown',
+             patientId: selectedPatientId,
+             result: analysisResult.suspicionLevel === 'Low' ? 'Normal' : 'Suspicious',
+             confidence: Math.round(analysisResult.confidence) + '%'
+         };
+         setHistoryRecords(prev => [newRecord, ...prev]);
+      }
+
+      // 3. Feedback and Redirect
+      alert("Record Saved Successfully!");
+      setAppState(AppState.DASHBOARD);
+      setActiveTab(DashboardTab.PATIENTS);
+      setAnalysisResult(null);
+      setSelectedImage(null);
+      setSelectedPatientId('');
+  };
+
+  // Payment Logic
+  const handleOpenPurchase = () => {
+    setPaymentStep('package');
+    setSelectedPackage(null);
+    setSelectedPaymentMethod(null);
+    setShowPurchaseModal(true);
+  };
+
+  const handleSelectPackage = (pkg: {credits: number, price: number}) => {
+    setSelectedPackage(pkg);
+    setPaymentStep('method');
+  };
+
+  const handleSelectMethod = (method: 'mobile' | 'card') => {
+    setSelectedPaymentMethod(method);
+  };
+
+  const handleProcessPayment = () => {
+    setPaymentStep('processing');
+    setTimeout(() => {
+      setPaymentStep('success');
+    }, 2500);
+  };
+
+  const handlePaymentSuccessClose = () => {
+    setShowPurchaseModal(false);
+    // Here you would update the actual credits state
   };
 
   // Chart Data: June to November - Breakdown of Normal, <CIN2, CIN2+
@@ -546,11 +665,12 @@ export default function App() {
   
   // Render Results Page
   if (appState === AppState.RESULTS && analysisResult) {
-      return <ResultsPage result={analysisResult} onBack={handleResultsBack} onSave={() => alert("Record Saved to Registry")} />;
+      const patient = patients.find(p => p.id === selectedPatientId);
+      return <ResultsPage result={analysisResult} patient={patient} onBack={handleResultsBack} onSave={handleSaveResult} />;
   }
 
   return (
-    <MainLayout activeTab={activeTab} onTabChange={setActiveTab}>
+    <MainLayout activeTab={activeTab} onTabChange={setActiveTab} onLogout={handleLogout}>
       {activeTab === DashboardTab.HOME && (
         <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500">
           <header className="mb-4 md:mb-6">
@@ -642,7 +762,7 @@ export default function App() {
                 </div>
                 
                 <Button
-                    onClick={() => setShowPurchaseModal(true)}
+                    onClick={handleOpenPurchase}
                     className="mt-1 bg-primary-600 text-white hover:bg-primary-700 shadow-sm w-full max-w-[160px] rounded-full h-9 text-sm font-medium border-2 border-transparent hover:border-primary-200"
                 >
                     Top Up Credits
@@ -688,7 +808,7 @@ export default function App() {
               <Card className="shadow-sm border-slate-200">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-slate-800 text-lg">Recent Patients</CardTitle>
-                  <Button variant="ghost" size="sm" className="text-primary-600 h-8 text-xs">View All</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setActiveTab(DashboardTab.PATIENTS)} className="text-primary-600 h-8 text-xs">View All</Button>
                 </CardHeader>
                 <CardContent className="p-0">
                    <div className="divide-y divide-slate-100">
@@ -724,7 +844,7 @@ export default function App() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="p-3 rounded-lg border border-slate-100 hover:border-primary-200 hover:bg-primary-50 transition-colors cursor-pointer flex items-center gap-3 group">
+                  <a href="https://www.who.int/teams/sexual-and-reproductive-health-and-research/key-areas-of-work/cervical-cancer" target="_blank" rel="noopener noreferrer" className="p-3 rounded-lg border border-slate-100 hover:border-primary-200 hover:bg-primary-50 transition-colors cursor-pointer flex items-center gap-3 group">
                     <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
                       <Globe className="h-5 w-5 text-blue-600" />
                     </div>
@@ -733,9 +853,9 @@ export default function App() {
                       <p className="text-xs text-slate-500">Latest international standards</p>
                     </div>
                     <ArrowRight className="ml-auto h-4 w-4 text-slate-300 group-hover:text-primary-600" />
-                  </div>
+                  </a>
 
-                  <div className="p-3 rounded-lg border border-slate-100 hover:border-green-200 hover:bg-green-50 transition-colors cursor-pointer flex items-center gap-3 group">
+                  <a href="#" onClick={(e) => { e.preventDefault(); alert("Zambian Clinical Protocol PDF downloading...") }} className="p-3 rounded-lg border border-slate-100 hover:border-green-200 hover:bg-green-50 transition-colors cursor-pointer flex items-center gap-3 group">
                      <div className="h-10 w-10 rounded-full bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition-colors">
                       <FileText className="h-5 w-5 text-green-600" />
                     </div>
@@ -744,7 +864,7 @@ export default function App() {
                       <p className="text-xs text-slate-500">MoH National Guidelines</p>
                     </div>
                     <ArrowRight className="ml-auto h-4 w-4 text-slate-300 group-hover:text-green-600" />
-                  </div>
+                  </a>
                 </CardContent>
               </Card>
             </div>
@@ -752,7 +872,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Image Confirmation Modal */}
+      {/* Image Confirmation & Patient Selection Modal */}
       <Dialog isOpen={showImagePreview} onClose={() => !isAnalyzing && setShowImagePreview(false)} title={analysisMode === 'clinical' ? "Confirm Patient Image" : "Confirm Training Image"}>
         <div className="space-y-6">
           <div className="relative rounded-xl overflow-hidden bg-slate-900 aspect-[4/3] flex items-center justify-center">
@@ -772,20 +892,78 @@ export default function App() {
           <div className="flex flex-col gap-2">
              <p className="text-sm text-slate-500 text-center">
                 {analysisMode === 'clinical' 
-                   ? "Ensure the cervix is clearly visible and in focus before proceeding with clinical analysis."
+                   ? "Ensure the cervix is clearly visible and in focus."
                    : "Use this image to practice and receive feedback on your VIA assessment skills."}
              </p>
           </div>
+
+          {/* Patient Selection Dropdown (Only for Clinical Mode) */}
+          {analysisMode === 'clinical' && (
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Select Patient for Screening</label>
+                  <div className="flex gap-2">
+                      <select 
+                          className="flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          value={selectedPatientId}
+                          onChange={(e) => setSelectedPatientId(e.target.value)}
+                          disabled={isAnalyzing}
+                      >
+                          <option value="">-- Select Patient --</option>
+                          {patients.map(p => (
+                              <option key={p.id} value={p.id}>{p.name} ({p.id})</option>
+                          ))}
+                      </select>
+                      <Button variant="outline" onClick={() => setShowNewPatientModal(true)} disabled={isAnalyzing}>
+                          <Plus size={16} /> New
+                      </Button>
+                  </div>
+                  {!selectedPatientId && <p className="text-xs text-amber-600 mt-2">Please select a patient to proceed.</p>}
+              </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
              <Button variant="outline" onClick={handleRetake} className="border-slate-300 text-slate-700" disabled={isAnalyzing}>
                 <RefreshCw size={16} className="mr-2" /> Retake
              </Button>
-             <Button onClick={handleAnalyzeConfirm} className={analysisMode === 'clinical' ? 'bg-primary-600' : 'bg-secondary-500 text-white hover:bg-secondary-600'} isLoading={isAnalyzing}>
+             <Button 
+                onClick={handleAnalyzeConfirm} 
+                className={analysisMode === 'clinical' ? 'bg-primary-600' : 'bg-secondary-500 text-white hover:bg-secondary-600'} 
+                isLoading={isAnalyzing}
+                disabled={analysisMode === 'clinical' && !selectedPatientId}
+             >
                 {analysisMode === 'clinical' ? 'Start Analysis' : 'Get Feedback'} <ArrowRight size={16} className="ml-2" />
              </Button>
           </div>
         </div>
+      </Dialog>
+      
+      {/* New Patient Modal */}
+      <Dialog isOpen={showNewPatientModal} onClose={() => setShowNewPatientModal(false)} title="Register New Patient">
+          <div className="space-y-4">
+              <Input 
+                  label="Full Name" 
+                  placeholder="e.g. Mary Banda" 
+                  value={newPatientForm.name} 
+                  onChange={(e) => setNewPatientForm({...newPatientForm, name: e.target.value})} 
+              />
+              <Input 
+                  label="Age" 
+                  type="number" 
+                  placeholder="e.g. 32" 
+                  value={newPatientForm.age} 
+                  onChange={(e) => setNewPatientForm({...newPatientForm, age: e.target.value})} 
+              />
+              <Input 
+                  label="Phone Number" 
+                  placeholder="e.g. 097..." 
+                  value={newPatientForm.phone} 
+                  onChange={(e) => setNewPatientForm({...newPatientForm, phone: e.target.value})} 
+              />
+              <div className="pt-2 flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowNewPatientModal(false)}>Cancel</Button>
+                  <Button onClick={handleAddNewPatient} disabled={!newPatientForm.name}>Save & Select</Button>
+              </div>
+          </div>
       </Dialog>
 
       {activeTab === DashboardTab.PATIENTS && (
@@ -795,7 +973,7 @@ export default function App() {
               <h1 className="text-2xl font-bold text-slate-900">Patient Registry</h1>
               <p className="text-slate-500 text-sm">Manage and track your patient records.</p>
             </div>
-            <Button className="gap-2 w-full md:w-auto">
+            <Button className="gap-2 w-full md:w-auto" onClick={() => setShowNewPatientModal(true)}>
               <Plus size={16} /> New Patient
             </Button>
           </div>
@@ -882,17 +1060,17 @@ export default function App() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                   {[1,2,3,4,5].map((i) => (
+                   {historyRecords.map((record, i) => (
                       <tr key={i} className="hover:bg-slate-50 transition-colors">
-                         <td className="px-6 py-4 text-slate-900 font-medium whitespace-nowrap">Nov {20-i}, 2025</td>
+                         <td className="px-6 py-4 text-slate-900 font-medium whitespace-nowrap">{record.date}</td>
                          <td className="px-6 py-4 text-slate-600 whitespace-nowrap">
-                           {patients[i].name} <span className="text-slate-400 text-xs block">{patients[i].id}</span>
+                           {record.patientName} <span className="text-slate-400 text-xs block">{record.patientId}</span>
                          </td>
                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge variant={i === 2 ? 'danger' : 'success'}>{i === 2 ? 'Suspicious' : 'Normal'}</Badge>
+                            <Badge variant={record.result === 'Suspicious' ? 'danger' : 'success'}>{record.result}</Badge>
                          </td>
                          <td className="px-6 py-4 text-slate-600 whitespace-nowrap">
-                            {i === 2 ? '89%' : '94%'}
+                            {record.confidence}
                          </td>
                          <td className="px-6 py-4 text-right whitespace-nowrap">
                             <Button variant="ghost" size="sm" className="text-primary-600">
@@ -947,8 +1125,12 @@ export default function App() {
                       <Button variant="outline" className="w-full justify-start text-slate-600">
                          Notification Preferences
                       </Button>
-                      <Button variant="ghost" className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700">
-                         Sign Out
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
+                        onClick={handleLogout}
+                      >
+                         <LogOut size={16} className="mr-2"/> Sign Out
                       </Button>
                    </div>
                 </div>
@@ -957,25 +1139,120 @@ export default function App() {
         </div>
       )}
 
+      {/* Payment Modal */}
       <Dialog isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} title="Top Up Screening Credits">
          <div className="space-y-4">
-            <p className="text-slate-600 text-sm">Purchase additional AI analysis credits. Secure payment via Mobile Money or Card.</p>
-            
-            <div className="grid grid-cols-2 gap-4 my-6">
-               <div className="border-2 border-primary-100 bg-primary-50 rounded-xl p-4 cursor-pointer hover:border-primary-500 transition-all text-center">
-                  <div className="text-lg font-bold text-primary-900">50 Credits</div>
-                  <div className="text-slate-500 text-xs mb-2">Starter Pack</div>
-                  <div className="text-xl font-bold text-secondary-600">$10</div>
-               </div>
-               <div className="border-2 border-primary-500 bg-white rounded-xl p-4 cursor-pointer shadow-md text-center relative overflow-hidden">
-                  <div className="absolute top-0 right-0 bg-secondary-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">POPULAR</div>
-                  <div className="text-lg font-bold text-primary-900">100 Credits</div>
-                  <div className="text-slate-500 text-xs mb-2">Standard Pack</div>
-                  <div className="text-xl font-bold text-secondary-600">$18</div>
-               </div>
-            </div>
+            {paymentStep === 'package' && (
+              <>
+                <p className="text-slate-600 text-sm">Purchase additional AI analysis credits. Select a package below.</p>
+                <div className="grid grid-cols-2 gap-4 my-6">
+                   <div 
+                      onClick={() => handleSelectPackage({credits: 50, price: 10})}
+                      className="border-2 border-primary-100 bg-primary-50 rounded-xl p-4 cursor-pointer hover:border-primary-500 transition-all text-center"
+                   >
+                      <div className="text-lg font-bold text-primary-900">50 Credits</div>
+                      <div className="text-slate-500 text-xs mb-2">Starter Pack</div>
+                      <div className="text-xl font-bold text-secondary-600">$10</div>
+                   </div>
+                   <div 
+                      onClick={() => handleSelectPackage({credits: 100, price: 18})}
+                      className="border-2 border-primary-500 bg-white rounded-xl p-4 cursor-pointer shadow-md text-center relative overflow-hidden ring-2 ring-primary-100 hover:ring-primary-400"
+                   >
+                      <div className="absolute top-0 right-0 bg-secondary-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">POPULAR</div>
+                      <div className="text-lg font-bold text-primary-900">100 Credits</div>
+                      <div className="text-slate-500 text-xs mb-2">Standard Pack</div>
+                      <div className="text-xl font-bold text-secondary-600">$18</div>
+                   </div>
+                </div>
+              </>
+            )}
 
-            <Button className="w-full bg-primary-600 h-12">Proceed to Payment</Button>
+            {paymentStep === 'method' && selectedPackage && (
+               <>
+                 <div className="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-lg">
+                    <div className="font-semibold text-slate-800">Selected: {selectedPackage.credits} Credits</div>
+                    <div className="ml-auto font-bold text-primary-600">${selectedPackage.price}</div>
+                    <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setPaymentStep('package')}>Change</Button>
+                 </div>
+                 <p className="text-slate-600 text-sm mb-4">Select Payment Method:</p>
+                 <div className="space-y-3">
+                    <div 
+                       onClick={() => setSelectedPaymentMethod('mobile')}
+                       className={`p-4 border rounded-xl flex items-center gap-3 cursor-pointer transition-all ${selectedPaymentMethod === 'mobile' ? 'border-primary-600 bg-primary-50' : 'border-slate-200 hover:border-primary-300'}`}
+                    >
+                       <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center border border-slate-100 shadow-sm">
+                          <Smartphone className="text-slate-700" />
+                       </div>
+                       <div>
+                          <div className="font-semibold text-slate-900">Mobile Money</div>
+                          <div className="text-xs text-slate-500">Airtel / MTN Money</div>
+                       </div>
+                       {selectedPaymentMethod === 'mobile' && <div className="ml-auto h-4 w-4 bg-primary-600 rounded-full"></div>}
+                    </div>
+
+                    <div 
+                       onClick={() => setSelectedPaymentMethod('card')}
+                       className={`p-4 border rounded-xl flex items-center gap-3 cursor-pointer transition-all ${selectedPaymentMethod === 'card' ? 'border-primary-600 bg-primary-50' : 'border-slate-200 hover:border-primary-300'}`}
+                    >
+                       <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center border border-slate-100 shadow-sm">
+                          <CreditCard className="text-slate-700" />
+                       </div>
+                       <div>
+                          <div className="font-semibold text-slate-900">Card Payment</div>
+                          <div className="text-xs text-slate-500">Visa / MasterCard</div>
+                       </div>
+                       {selectedPaymentMethod === 'card' && <div className="ml-auto h-4 w-4 bg-primary-600 rounded-full"></div>}
+                    </div>
+                 </div>
+
+                 {selectedPaymentMethod === 'mobile' && (
+                    <div className="mt-4 animate-in slide-in-from-top-2">
+                       <Input label="Mobile Number" placeholder="+260 97..." className="bg-slate-50" />
+                    </div>
+                 )}
+
+                 {selectedPaymentMethod === 'card' && (
+                    <div className="mt-4 space-y-3 animate-in slide-in-from-top-2">
+                       <Input label="Card Number" placeholder="0000 0000 0000 0000" className="bg-slate-50" />
+                       <div className="grid grid-cols-2 gap-4">
+                          <Input label="Expiry" placeholder="MM/YY" className="bg-slate-50" />
+                          <Input label="CVC" placeholder="123" className="bg-slate-50" />
+                       </div>
+                    </div>
+                 )}
+
+                 <Button 
+                   className="w-full mt-6 bg-primary-600 h-12" 
+                   disabled={!selectedPaymentMethod}
+                   onClick={handleProcessPayment}
+                 >
+                    Pay Now
+                 </Button>
+               </>
+            )}
+
+            {paymentStep === 'processing' && (
+               <div className="py-12 flex flex-col items-center justify-center text-center animate-in fade-in">
+                  <div className="h-12 w-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mb-4"></div>
+                  <h3 className="text-lg font-semibold text-slate-900">Processing Payment...</h3>
+                  <p className="text-slate-500 text-sm mt-2">Please wait while we confirm your transaction.</p>
+               </div>
+            )}
+
+            {paymentStep === 'success' && (
+               <div className="py-8 flex flex-col items-center justify-center text-center animate-in zoom-in duration-300">
+                  <div className="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
+                     <CheckCircle2 size={32} />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">Payment Successful!</h3>
+                  <p className="text-slate-600 mt-2">
+                     You have successfully added <strong>{selectedPackage?.credits} Credits</strong> to your account.
+                  </p>
+                  <Button onClick={handlePaymentSuccessClose} className="mt-8 w-full bg-slate-900 text-white hover:bg-slate-800">
+                     Done
+                  </Button>
+               </div>
+            )}
          </div>
       </Dialog>
     </MainLayout>
